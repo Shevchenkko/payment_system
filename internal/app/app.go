@@ -44,6 +44,7 @@ func Run() {
 	err = sql.DB.AutoMigrate(
 		&domain.User{},
 		&domain.BankAccount{},
+		&domain.MessageLog{},
 	)
 
 	if err != nil {
@@ -57,8 +58,9 @@ func Run() {
 
 	// init repositories
 	repositories := service.Repositories{
-		Users: repository.NewUsersRepo(sql),
-		Banks: repository.NewBankAccountsRepo(sql),
+		Users:    repository.NewUsersRepo(sql),
+		Banks:    repository.NewBankAccountsRepo(sql),
+		Messages: repository.NewMessageLogsRepo(sql),
 	}
 
 	services := service.Services{
@@ -67,6 +69,9 @@ func Run() {
 			apis,
 		),
 		BankAccounts: service.NewBankAccountService(
+			repositories,
+		),
+		MessageLogs: service.NewMessageLogsService(
 			repositories,
 		),
 	}

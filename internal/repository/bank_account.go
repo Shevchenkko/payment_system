@@ -51,6 +51,20 @@ func (b *BankAccountsRepo) CreateBankAccount(ctx context.Context, inp *service.B
 	return account, nil
 }
 
+// TopUpBankAccount - used to top up bank account in the database.
+func (b *BankAccountsRepo) TopUpBankAccount(ctx context.Context, inp *service.TopUpBankAccountInput, balance float64) error {
+	err := b.DB.
+		Model(domain.BankAccount{}).
+		Where("card_number = ?", inp.CardNumber).
+		Update("balance", balance).
+		Error
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 // Check the credit card in the database.
 func (b *BankAccountsRepo) CheckCreditCard(ctx context.Context, cardNumber int64) (*domain.BankAccount, error) {
 	var card domain.BankAccount

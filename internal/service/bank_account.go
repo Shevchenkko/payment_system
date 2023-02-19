@@ -37,11 +37,40 @@ func (b *BankAccountsService) CreateBankAccount(ctx context.Context, userId int,
 	}, nil
 }
 
+// TopUpBankAccount is used for top up bank account.
+func (b *BankAccountsService) TopUpBankAccount(ctx context.Context, userId int, inp *TopUpBankAccountInput) (BankAccountOutput, error) {
+	client, err := b.repos.Users.GetUserByID(ctx, userId)
+	if err != nil {
+		return BankAccountOutput{}, err
+	}
+
+	// get card
+	card, err := b.repos.Banks.CheckCreditCard(ctx, inp.CardNumber)
+	if err != nil {
+		return BankAccountOutput{}, err
+	}
+
+	cardBalance := card.Balance + inp.OperationAmount
+
+	// top up bank account in db
+	err = b.repos.Banks.TopUpBankAccount(ctx, inp, cardBalance)
+	if err != nil {
+		return BankAccountOutput{}, err
+	}
+
+	return BankAccountOutput{
+		Client:     client.FullName,
+		CardNumber: card.CardNumber,
+		IBAN:       card.IBAN,
+		Balance:    cardBalance,
+	}, nil
+}
+
 // BlockBankAccount is used for blocing bank account.
-func (b *BankAccountsService) BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error) {
+func (b *BankAccountsService) BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error) {
 	status, err := b.repos.Banks.CheckCreditCard(ctx, inp.CardNumber)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// check secret value
@@ -49,29 +78,28 @@ func (b *BankAccountsService) BlockBankAccount(ctx context.Context, userRole str
 
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, &Error{Message: "Wrong secret value"}
+			return "", &Error{Message: "Wrong secret value"}
 		}
-
-		return nil, err
+		return "", err
 	}
 
 	var accountChange string
 	if status.Status == "ACTIVE" {
 		accountChange, err = b.repos.Banks.ChangeCreditCardStatus(ctx, inp.CardNumber, "LOCK")
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	} else {
 		accountChange = "The account has already been blocked"
 	}
-	return &accountChange, nil
+	return accountChange, nil
 }
 
 // UnlockBankAccount is used for unlocing bank account.
-func (b *BankAccountsService) UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error) {
+func (b *BankAccountsService) UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error) {
 	status, err := b.repos.Banks.CheckCreditCard(ctx, inp.CardNumber)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// check secret value
@@ -79,20 +107,19 @@ func (b *BankAccountsService) UnlockBankAccount(ctx context.Context, userRole st
 
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, &Error{Message: "Wrong secret value"}
+			return "", &Error{Message: "Wrong secret value"}
 		}
-
-		return nil, err
+		return "", err
 	}
 
 	var accountChange string
 	if status.Status == "LOCK" {
 		accountChange, err = b.repos.Banks.ChangeCreditCardStatus(ctx, inp.CardNumber, "ACTIVE")
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	} else {
 		accountChange = "The account has already been active"
 	}
-	return &accountChange, nil
+	return accountChange, nil
 }

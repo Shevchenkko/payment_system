@@ -10,7 +10,7 @@ type BankAccount struct {
 	ITN         int64   `json:"itn,omitempty" gorm:"column:itn;not null;index"`
 	CardNumber  int64   `json:"cardNumber,omitempty" gorm:"column:card_number;not null;unique;index"`
 	IBAN        string  `json:"iban,omitempty" gorm:"column:iban;not null;unique;index"`
-	Balance     float32 `json:"balance,omitempty" gorm:"column:balance"`
+	Balance     float64 `json:"balance,omitempty" gorm:"column:balance"`
 	Status      string  `json:"status,omitempty" gorm:"column:status;type:enum('ACTIVE','LOCK');default:'ACTIVE'"`
 
 	mysql.Model

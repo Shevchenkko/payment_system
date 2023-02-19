@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
 ///
@@ -39,6 +41,7 @@ func (err *Error) Error() string {
 type Services struct {
 	Users
 	BankAccounts
+	MessageLogs
 }
 
 // Users - represents users service interface.
@@ -87,8 +90,9 @@ type SendUserEmailInput struct {
 
 type BankAccounts interface {
 	CreateBankAccount(ctx context.Context, userId int, inp *BankAccountInput) (BankAccountOutput, error)
-	BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error)
-	UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error)
+	TopUpBankAccount(ctx context.Context, userId int, inp *TopUpBankAccountInput) (BankAccountOutput, error)
+	BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
+	UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
 }
 
 type BankAccountInput struct {
@@ -103,7 +107,21 @@ type BankAccountOutput struct {
 	Balance    float64 `json:"balance"`
 }
 
+type TopUpBankAccountInput struct {
+	CardNumber      int64   `json:"cardNumber"`
+	OperationAmount float64 `json:"operationAmount"`
+}
+
 type ChangeBankAccountInput struct {
 	CardNumber  int64  `json:"cardNumber"`
 	SecretValue string `json:"secretValue"`
+}
+
+type MessageLogs interface {
+	CreateMessageLog(ctx context.Context, userId int, inp *MessageLogInput) (*domain.MessageLog, error)
+}
+
+type MessageLogInput struct {
+	Client     string `json:"client"`
+	MessageLog string `json:"messageLog"`
 }

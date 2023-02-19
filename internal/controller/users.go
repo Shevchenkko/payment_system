@@ -16,12 +16,12 @@ import (
 
 // userRoutes - represents user service router.
 type userRoutes struct {
-	service service.Users
+	service service.Services
 	logger  logger.Interface
 }
 
 // newUserRoutes - implements new user service routes.
-func newUserRoutes(handler *gin.RouterGroup, s service.Users, l logger.Interface) {
+func newUserRoutes(handler *gin.RouterGroup, s service.Services, l logger.Interface) {
 	r := &userRoutes{s, l}
 	h := handler.Group("/users")
 	{
