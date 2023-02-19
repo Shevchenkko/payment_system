@@ -118,7 +118,7 @@ func (us *UsersService) LoginUser(ctx context.Context, inp *LoginUserInput) (Log
 }
 
 // VerifyAccessToken is used to verify user jwt access token.
-func (s *UsersService) VerifyAccessToken(ctx context.Context, token string) (bool, int, string) {
+func (us *UsersService) VerifyAccessToken(ctx context.Context, token string) (bool, int, string) {
 	tokenData, err := access.DecodeToken(token, os.Getenv("HMAC_SECRET"))
 	if err != nil {
 		return false, 0, ""

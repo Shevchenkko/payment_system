@@ -43,6 +43,7 @@ func Run() {
 
 	err = sql.DB.AutoMigrate(
 		&domain.User{},
+		&domain.BankAccount{},
 	)
 
 	if err != nil {
@@ -57,12 +58,16 @@ func Run() {
 	// init repositories
 	repositories := service.Repositories{
 		Users: repository.NewUsersRepo(sql),
+		Banks: repository.NewBankAccountsRepo(sql),
 	}
 
 	services := service.Services{
 		Users: service.NewUserService(
 			repositories,
 			apis,
+		),
+		BankAccounts: service.NewBankAccountService(
+			repositories,
 		),
 	}
 

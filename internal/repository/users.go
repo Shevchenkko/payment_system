@@ -66,7 +66,24 @@ func (r *UsersRepo) GetUser(ctx context.Context, email string) (*domain.User, er
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, &service.Error{Message: "User not registered"}
 		}
+		return nil, err
+	}
 
+	return &user, nil
+}
+
+// GetUserByID is used to get user by id from the database.
+func (r *UsersRepo) GetUserByID(ctx context.Context, userId int) (*domain.User, error) {
+	var user domain.User
+	err := r.DB.
+		WithContext(ctx).
+		Where("id = ?", userId).
+		First(&user).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, &service.Error{Message: "User not found"}
+		}
 		return nil, err
 	}
 
@@ -102,7 +119,6 @@ func (r *UsersRepo) GetToken(ctx context.Context, token string) (*domain.UserTok
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, &service.Error{Message: "User with provided token not found"}
 		}
-
 		return nil, err
 	}
 

@@ -38,6 +38,7 @@ func (err *Error) Error() string {
 // Services contains all available services.
 type Services struct {
 	Users
+	BankAccounts
 }
 
 // Users - represents users service interface.
@@ -82,4 +83,27 @@ type LoginUserOutput struct {
 type SendUserEmailInput struct {
 	Email string `json:"email"`
 	Token string `json:"token"`
+}
+
+type BankAccounts interface {
+	CreateBankAccount(ctx context.Context, userId int, inp *BankAccountInput) (BankAccountOutput, error)
+	BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error)
+	UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (*string, error)
+}
+
+type BankAccountInput struct {
+	ITN         int64  `json:"itn"`
+	SecretValue string `json:"secretValue"`
+}
+
+type BankAccountOutput struct {
+	Client     string  `json:"client"`
+	CardNumber int64   `json:"cardNumber"`
+	IBAN       string  `json:"iban"`
+	Balance    float64 `json:"balance"`
+}
+
+type ChangeBankAccountInput struct {
+	CardNumber  int64  `json:"cardNumber"`
+	SecretValue string `json:"secretValue"`
 }

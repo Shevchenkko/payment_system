@@ -47,7 +47,7 @@ func newAuthMiddleware(services service.Services, l logger.Interface) gin.Handle
 
 		// get token
 		tokenString := tokenStringArr[1]
-		valid, userID, userRole := services.Users.VerifyAccessToken(c.Request.Context(), tokenString)
+		valid, client, userRole := services.Users.VerifyAccessToken(c.Request.Context(), tokenString)
 		if !valid {
 			logger.Debug("invalid auth token", "tokenStringArr", tokenStringArr)
 			errorResponse(c, http.StatusUnauthorized, "invalid auth token")
@@ -55,7 +55,7 @@ func newAuthMiddleware(services service.Services, l logger.Interface) gin.Handle
 		}
 
 		// set user id to context
-		c.Set("userID", userID)
+		c.Set("client", client)
 
 		// set user role to context
 		c.Set("userRole", userRole)

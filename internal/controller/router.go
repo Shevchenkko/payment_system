@@ -26,5 +26,6 @@ func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface) {
 	h := handler.Group("/api/v1")
 	{
 		newUserRoutes(h, s.Users, l)
+		newBankAccountRoutes(h, s, l)
 	}
 }
