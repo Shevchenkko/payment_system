@@ -12,12 +12,13 @@ import (
 // bankAccountRoutes - represents bank account service router.
 type bankAccountRoutes struct {
 	service service.Services
+	repos   service.Repositories
 	logger  logger.Interface
 }
 
 // newBankAccountRoutes - implements new bank account service routes.
-func newBankAccountRoutes(handler *gin.RouterGroup, s service.Services, l logger.Interface) {
-	r := &bankAccountRoutes{s, l}
+func newBankAccountRoutes(handler *gin.RouterGroup, s service.Services, l logger.Interface, repo service.Repositories) {
+	r := &bankAccountRoutes{s, repo, l}
 	h := handler.Group("/bank_account")
 	{
 		// routes
@@ -127,6 +128,17 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 		cardBalance = body.OperationAmount
 	} else {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "failed to top up the bank account, please enter the correct amount")
+		return
+	}
+
+	// check card status
+	status, err := r.repos.Banks.CheckCreditCard(c.Request.Context(), body.CardNumber)
+	if err != nil {
+		return
+	}
+
+	if status.Status == "LOCK" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "failed to top up the bank account, please unlock your bank account")
 		return
 	}
 

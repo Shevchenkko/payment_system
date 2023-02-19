@@ -80,7 +80,7 @@ func Run() {
 	handler := gin.New()
 
 	// init router
-	controller.NewRouter(handler, services, l)
+	controller.NewRouter(handler, services, l, repositories)
 
 	// init and run http server
 	httpServer := httpserver.New(handler, httpserver.Port(os.Getenv("HTTP_PORT")), httpserver.ReadTimeout(60*time.Second), httpserver.WriteTimeout(60*time.Second))

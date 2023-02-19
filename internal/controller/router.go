@@ -15,7 +15,7 @@ import (
 )
 
 // NewRouter - represents application router.
-func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface) {
+func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface, repo service.Repositories) {
 	// options
 	handler.Use(gin.Logger(), gin.Recovery(), corsMiddleware)
 
@@ -26,6 +26,6 @@ func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface) {
 	h := handler.Group("/api/v1")
 	{
 		newUserRoutes(h, s, l)
-		newBankAccountRoutes(h, s, l)
+		newBankAccountRoutes(h, s, l, repo)
 	}
 }
