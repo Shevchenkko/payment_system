@@ -83,6 +83,24 @@ func (b *BankAccountsRepo) CheckCreditCard(ctx context.Context, cardNumber int64
 	return &card, nil
 }
 
+// Get credit card info by IBAN in the database.
+func (b *BankAccountsRepo) GetInfoByIBAN(ctx context.Context, IBAN string) (*domain.BankAccount, error) {
+	var card domain.BankAccount
+	err := b.DB.
+		WithContext(ctx).
+		Where("iban = ?", IBAN).
+		First(&card).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, &service.Error{Message: "IBAN not found"}
+		}
+		return nil, err
+	}
+
+	return &card, nil
+}
+
 // Change the credit card in the database.
 func (b *BankAccountsRepo) ChangeCreditCardStatus(ctx context.Context, cardNumber int64, status string) (string, error) {
 	err := b.DB.

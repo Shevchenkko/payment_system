@@ -16,6 +16,7 @@ import (
 type Repositories struct {
 	Users    UsersRepo
 	Banks    BankAccountsRepo
+	Payments PaymentsRepo
 	Messages MessageLogsRepo
 }
 
@@ -46,7 +47,14 @@ type BankAccountsRepo interface {
 	CreateBankAccount(ctx context.Context, inp *BankAccountInput, client string) (*domain.BankAccount, error)
 	TopUpBankAccount(ctx context.Context, inp *TopUpBankAccountInput, balance float64) error
 	CheckCreditCard(ctx context.Context, cardNumber int64) (*domain.BankAccount, error)
+	GetInfoByIBAN(ctx context.Context, IBAN string) (*domain.BankAccount, error)
 	ChangeCreditCardStatus(ctx context.Context, cardNumber int64, status string) (string, error)
+}
+
+type PaymentsRepo interface {
+	CreatePayment(ctx context.Context, inp *PaymentInput, client *domain.BankAccount) (*domain.Payment, error)
+	SentPayment(ctx context.Context, paymentId int) (string, error)
+	GetPaymentByID(ctx context.Context, paymentId int) (*domain.Payment, error)
 }
 
 type MessageLogsRepo interface {

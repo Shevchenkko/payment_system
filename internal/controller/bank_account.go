@@ -162,7 +162,7 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 
 	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
 		&service.MessageLogInput{
-			MessageLog: fmt.Sprintf("Successfully toping up bank account %d on balance %0.2f", data.CardNumber, body.OperationAmount),
+			MessageLog: fmt.Sprintf("Successfully toping up bank account %d on operation amount %0.2f", data.CardNumber, body.OperationAmount),
 		})
 	if err != nil {
 		return

@@ -75,7 +75,6 @@ func (b *BankAccountsService) BlockBankAccount(ctx context.Context, userRole str
 
 	// check secret value
 	err = bcrypt.CompareHashAndPassword([]byte(status.SecretValue), []byte(inp.SecretValue))
-
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return "", &Error{Message: "Wrong secret value"}

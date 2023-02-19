@@ -27,5 +27,6 @@ func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface, repo
 	{
 		newUserRoutes(h, s, l)
 		newBankAccountRoutes(h, s, l, repo)
+		newPaymentRoutes(h, s, l, repo)
 	}
 }

@@ -41,6 +41,7 @@ func (err *Error) Error() string {
 type Services struct {
 	Users
 	BankAccounts
+	Payments
 	MessageLogs
 }
 
@@ -115,6 +116,32 @@ type TopUpBankAccountInput struct {
 type ChangeBankAccountInput struct {
 	CardNumber  int64  `json:"cardNumber"`
 	SecretValue string `json:"secretValue"`
+}
+
+type Payments interface {
+	CreatePayment(ctx context.Context, userId int, inp *PaymentInput) (*PaymentOutput, error)
+	SentPayment(ctx context.Context, paymentId int, secretValue string, cardBalance float64) (string, error)
+}
+
+type PaymentInput struct {
+	FromClientIBAN  string  `json:"fromClientIban"`
+	Description     string  `json:"description"`
+	ToClientIBAN    string  `json:"toClientIban"`
+	ToClient        string  `json:"toClient"`
+	OperationAmount float64 `json:"operationAmount"`
+}
+
+type PaymentOutput struct {
+	PaymentID            int64   `json:"paymentId"`
+	PaymentStatus        string  `json:"paymentStatus"`
+	FromClient           string  `json:"fromClient"`
+	FromClientITN        int64   `json:"fromClientItn"`
+	FromClientIBAN       string  `json:"fromClientIban"`
+	FromClientCardNumber int64   `json:"fromClientCardNumber"`
+	Description          string  `json:"description"`
+	ToClientIBAN         string  `json:"toClientIban"`
+	ToClient             string  `json:"toClient"`
+	OperationAmount      float64 `json:"operationAmount"`
 }
 
 type MessageLogs interface {

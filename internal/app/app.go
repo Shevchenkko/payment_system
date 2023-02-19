@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	// external
-
 	"github.com/Shevchenkko/payment_system/pkg/httpserver"
 	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/Shevchenkko/payment_system/pkg/mysql"
@@ -45,6 +44,7 @@ func Run() {
 		&domain.User{},
 		&domain.BankAccount{},
 		&domain.MessageLog{},
+		&domain.Payment{},
 	)
 
 	if err != nil {
@@ -60,6 +60,7 @@ func Run() {
 	repositories := service.Repositories{
 		Users:    repository.NewUsersRepo(sql),
 		Banks:    repository.NewBankAccountsRepo(sql),
+		Payments: repository.NewPaymentsRepo(sql),
 		Messages: repository.NewMessageLogsRepo(sql),
 	}
 
@@ -69,6 +70,9 @@ func Run() {
 			apis,
 		),
 		BankAccounts: service.NewBankAccountService(
+			repositories,
+		),
+		Payments: service.NewPaymentService(
 			repositories,
 		),
 		MessageLogs: service.NewMessageLogsService(
