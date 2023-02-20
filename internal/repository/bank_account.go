@@ -32,7 +32,7 @@ func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domai
 
 	q := b.DB.
 		Table("bank_accounts").
-		Offset(filter.Page).
+		Offset((filter.Page - 1) * filter.List).
 		Limit(filter.List).
 		Order(filter.OrderString())
 

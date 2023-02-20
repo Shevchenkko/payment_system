@@ -30,7 +30,7 @@ func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter
 
 	q := p.DB.
 		Table("payments").
-		Offset(filter.Page).
+		Offset((filter.Page - 1) * filter.List).
 		Limit(filter.List).
 		Order(filter.OrderString())
 
