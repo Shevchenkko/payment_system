@@ -23,6 +23,45 @@ func NewBankAccountsRepo(mysql *mysql.MySQL) *BankAccountsRepo {
 	return &BankAccountsRepo{mysql}
 }
 
+// Search bank account - used to search bank account from the database.
+func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*service.SearchBankAccounts, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	q := b.DB.
+		Table("bank_accounts").
+		Offset(filter.Page).
+		Limit(filter.List).
+		Order(filter.OrderString())
+
+	var bankAccountOutput []service.BankAccountOutput
+	var response *service.SearchBankAccounts
+	if err := q.Find(&bankAccountOutput).Error; err != nil {
+		return nil, &service.Error{Message: "Bank accounts not found"}
+	}
+
+	var count int64
+	q = b.DB.
+		Table("bank_accounts")
+	if err := q.Count(&count).Error; err != nil {
+		return nil, &service.Error{Message: "Bank accounts not found"}
+	}
+
+	response = &service.SearchBankAccounts{
+		Data: bankAccountOutput,
+		Pagination: &domain.Pagination{
+			Order: filter.OrderString(),
+			Page:  filter.Page,
+			List:  filter.List,
+			Total: &count,
+		},
+	}
+
+	return response, nil
+}
+
 // CreateBankAccount - used to create bank account in the database.
 func (b *BankAccountsRepo) CreateBankAccount(ctx context.Context, inp *service.BankAccountInput, client string) (*domain.BankAccount, error) {
 	secretValueBytes, err := bcrypt.GenerateFromPassword([]byte(inp.SecretValue), 14)

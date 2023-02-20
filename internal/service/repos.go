@@ -44,6 +44,7 @@ type ResetPasswordInput struct {
 }
 
 type BankAccountsRepo interface {
+	SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*SearchBankAccounts, error)
 	CreateBankAccount(ctx context.Context, inp *BankAccountInput, client string) (*domain.BankAccount, error)
 	TopUpBankAccount(ctx context.Context, inp *TopUpBankAccountInput, balance float64) error
 	CheckCreditCard(ctx context.Context, cardNumber int64) (*domain.BankAccount, error)
@@ -52,9 +53,10 @@ type BankAccountsRepo interface {
 }
 
 type PaymentsRepo interface {
+	SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error)
 	CreatePayment(ctx context.Context, inp *PaymentInput, client *domain.BankAccount) (*domain.Payment, error)
-	SentPayment(ctx context.Context, paymentId int) (string, error)
-	GetPaymentByID(ctx context.Context, paymentId int) (*domain.Payment, error)
+	SentPayment(ctx context.Context, paymentId int64) (string, error)
+	GetPaymentByID(ctx context.Context, paymentId int64) (*domain.Payment, error)
 }
 
 type MessageLogsRepo interface {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,6 +16,22 @@ type BankAccountsService struct {
 // NewBankAccountService - creates instance of new bank account service.
 func NewBankAccountService(repos Repositories) *BankAccountsService {
 	return &BankAccountsService{repos}
+}
+
+// SearchBankAccount is used for search bank account.
+func (b *BankAccountsService) SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*SearchBankAccounts, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	// search bank accounts from db
+	response, err := b.repos.Banks.SearchBankAccounts(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // CreateBankAccount is used for creating bank account.
@@ -31,6 +48,7 @@ func (b *BankAccountsService) CreateBankAccount(ctx context.Context, userId int,
 	}
 
 	return BankAccountOutput{
+		ID:         client.ID,
 		Client:     client.FullName,
 		CardNumber: account.CardNumber,
 		IBAN:       account.IBAN,

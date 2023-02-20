@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,6 +16,22 @@ type PaymentsService struct {
 // NewPaymentService - creates instance of new payment service.
 func NewPaymentService(repos Repositories) *PaymentsService {
 	return &PaymentsService{repos}
+}
+
+// SearchPayment is used for search payments.
+func (p *PaymentsService) SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	// search payments from db
+	response, err := p.repos.Payments.SearchPayments(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // CreatePayment is used for creating payment.
@@ -31,7 +48,7 @@ func (p *PaymentsService) CreatePayment(ctx context.Context, userId int, inp *Pa
 	}
 
 	return &PaymentOutput{
-		PaymentID:            payment.ID,
+		ID:                   payment.ID,
 		PaymentStatus:        payment.PaymentStatus,
 		FromClient:           payment.FromClient,
 		FromClientITN:        payment.FromClientITN,
@@ -45,7 +62,7 @@ func (p *PaymentsService) CreatePayment(ctx context.Context, userId int, inp *Pa
 }
 
 // SentPayment is used for senting payment.
-func (p *PaymentsService) SentPayment(ctx context.Context, paymentId int, secretValue string, cardBalance float64) (string, error) {
+func (p *PaymentsService) SentPayment(ctx context.Context, paymentId int64, secretValue string, cardBalance float64) (string, error) {
 	// check payment
 	payment, err := p.repos.Payments.GetPaymentByID(ctx, paymentId)
 	if err != nil {

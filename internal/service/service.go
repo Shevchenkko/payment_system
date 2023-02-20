@@ -90,10 +90,16 @@ type SendUserEmailInput struct {
 }
 
 type BankAccounts interface {
+	SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*SearchBankAccounts, error)
 	CreateBankAccount(ctx context.Context, userId int, inp *BankAccountInput) (BankAccountOutput, error)
 	TopUpBankAccount(ctx context.Context, userId int, inp *TopUpBankAccountInput) (BankAccountOutput, error)
 	BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
 	UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
+}
+
+type SearchBankAccounts struct {
+	Data       []BankAccountOutput `json:"data"`
+	Pagination *domain.Pagination  `json:"pagination"`
 }
 
 type BankAccountInput struct {
@@ -102,6 +108,7 @@ type BankAccountInput struct {
 }
 
 type BankAccountOutput struct {
+	ID         int     `json:"id"`
 	Client     string  `json:"client"`
 	CardNumber int64   `json:"cardNumber"`
 	IBAN       string  `json:"iban"`
@@ -119,8 +126,14 @@ type ChangeBankAccountInput struct {
 }
 
 type Payments interface {
+	SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error)
 	CreatePayment(ctx context.Context, userId int, inp *PaymentInput) (*PaymentOutput, error)
-	SentPayment(ctx context.Context, paymentId int, secretValue string, cardBalance float64) (string, error)
+	SentPayment(ctx context.Context, paymentId int64, secretValue string, cardBalance float64) (string, error)
+}
+
+type SearchPayments struct {
+	Data       []PaymentOutput    `json:"data"`
+	Pagination *domain.Pagination `json:"pagination"`
 }
 
 type PaymentInput struct {
@@ -132,7 +145,7 @@ type PaymentInput struct {
 }
 
 type PaymentOutput struct {
-	PaymentID            int64   `json:"paymentId"`
+	ID                   int64   `json:"id"`
 	PaymentStatus        string  `json:"paymentStatus"`
 	FromClient           string  `json:"fromClient"`
 	FromClientITN        int64   `json:"fromClientItn"`

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
 	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -22,9 +23,64 @@ func newPaymentRoutes(handler *gin.RouterGroup, s service.Services, l logger.Int
 	h := handler.Group("/payment")
 	{
 		// routes
+		h.GET("/search", newAuthMiddleware(s, l), r.searchPayment)
 		h.POST("/create", newAuthMiddleware(s, l), r.createPayment)
 		h.PATCH("/sent", newAuthMiddleware(s, l), r.sentPayment)
 	}
+}
+
+// searchPaymentRequestQuery - represents search payments request query.
+type searchPaymentRequestQuery struct {
+	Filter domain.Filter `form:"filter"`
+}
+
+// searchPaymentResponse - represents search payments response.
+type searchPaymentResponse struct {
+	Data       []service.PaymentOutput `json:"data"`
+	Pagination *domain.Pagination      `json:"pagination"`
+
+	Error *service.Error `json:"error,omitempty"`
+}
+
+func (r *paymentRoutes) searchPayment(c *gin.Context) {
+	logger := r.logger.Named("searchPayment")
+
+	filter, err := getFilterFromQuery(c.Request)
+	if err != nil {
+		logger.Error("failed to parse query params", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse query params")
+		return
+	}
+
+	// parse request query
+	var query searchPaymentRequestQuery
+	logger.Info("parsing request query")
+	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.Error("failed to parse request query", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse request query")
+		return
+	}
+
+	response, err := r.service.Payments.SearchPayments(c.Request.Context(), filter)
+	if err != nil {
+		logger.Error("failed to search payments", "err", err)
+		// get service error
+		err, ok := err.(*service.Error)
+		if ok {
+			c.AbortWithStatusJSON(http.StatusBadRequest, searchPaymentResponse{Error: err})
+			return
+		}
+		errorResponse(c, http.StatusInternalServerError, "failed to search payments")
+		return
+	}
+	logger = logger.With("search payment", response)
+	logger.Debug("got payments")
+
+	logger.Info("successfully search payments")
+	c.JSON(http.StatusOK, searchPaymentResponse{
+		Data:       response.Data,
+		Pagination: response.Pagination,
+	})
 }
 
 // createPaymentRequestBody - represents createPayment request body.
@@ -106,7 +162,7 @@ func (r *paymentRoutes) createPayment(c *gin.Context) {
 	logger = logger.With("create data", data)
 	logger.Info("successfully created payment")
 	c.JSON(http.StatusOK, createPaymentResponse{
-		PaymentID:            data.PaymentID,
+		PaymentID:            data.ID,
 		PaymentStatus:        data.PaymentStatus,
 		FromClient:           data.FromClient,
 		FromClientITN:        data.FromClientITN,
@@ -121,7 +177,7 @@ func (r *paymentRoutes) createPayment(c *gin.Context) {
 
 // sentPaymentRequestBody - represents setPayment request body.
 type sentPaymentRequestBody struct {
-	PaymentID   int    `json:"paymentId" binding:"required"`
+	PaymentID   int64  `json:"paymentId" binding:"required"`
 	SecretValue string `json:"secretValue" binding:"required"`
 }
 

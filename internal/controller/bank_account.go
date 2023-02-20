@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
 	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -22,11 +23,66 @@ func newBankAccountRoutes(handler *gin.RouterGroup, s service.Services, l logger
 	h := handler.Group("/bank_account")
 	{
 		// routes
+		h.GET("/search", newAuthMiddleware(s, l), r.searchBankAccount)
 		h.POST("/create", newAuthMiddleware(s, l), r.createBankAccount)
 		h.PATCH("/top_up", newAuthMiddleware(s, l), r.topUpBankAccount)
 		h.PATCH("/lock", newAuthMiddleware(s, l), r.lockBankAccount)
 		h.PATCH("/unlock", newAuthMiddleware(s, l), r.unlockBankAccount)
 	}
+}
+
+// searchBankAccountRequestQuery - represents search bank account request query.
+type searchBankAccountRequestQuery struct {
+	Filter domain.Filter `form:"filter"`
+}
+
+// searchBankAccountResponse - represents search bank account response.
+type searchBankAccountResponse struct {
+	Data       []service.BankAccountOutput `json:"data"`
+	Pagination *domain.Pagination          `json:"pagination"`
+
+	Error *service.Error `json:"error,omitempty"`
+}
+
+func (r *bankAccountRoutes) searchBankAccount(c *gin.Context) {
+	logger := r.logger.Named("searchBankAccount")
+
+	filter, err := getFilterFromQuery(c.Request)
+	if err != nil {
+		logger.Error("failed to parse query params", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse query params")
+		return
+	}
+
+	// parse request query
+	var query searchBankAccountRequestQuery
+	logger.Info("parsing request query")
+	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.Error("failed to parse request query", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse request query")
+		return
+	}
+
+	response, err := r.service.BankAccounts.SearchBankAccounts(c.Request.Context(), filter)
+	if err != nil {
+		logger.Error("failed to search bank accounts", "err", err)
+		// get service error
+		err, ok := err.(*service.Error)
+		if ok {
+			c.AbortWithStatusJSON(http.StatusBadRequest, searchBankAccountResponse{Error: err})
+			return
+		}
+		errorResponse(c, http.StatusInternalServerError, "failed to search bank accounts")
+		return
+	}
+	logger = logger.With("search bank account", response)
+	logger.Debug("got bank account")
+
+	logger.Info("successfully search bank account")
+	c.JSON(http.StatusOK, searchBankAccountResponse{
+		Data:       response.Data,
+		Pagination: response.Pagination,
+	})
 }
 
 // createBankAccountRequestBody - represents createBankAccount request body.
@@ -37,6 +93,7 @@ type createBankAccountRequestBody struct {
 
 // createBankAccountResponse - represents createBankAccount response.
 type createBankAccountResponse struct {
+	ID         int            `json:"id"`
 	Client     string         `json:"client"`
 	CardNumber int64          `json:"cardNumber"`
 	IBAN       string         `json:"iban"`
@@ -87,6 +144,7 @@ func (r *bankAccountRoutes) createBankAccount(c *gin.Context) {
 	logger = logger.With("create data", data)
 	logger.Info("successfully created bank account")
 	c.JSON(http.StatusOK, createBankAccountResponse{
+		ID:         data.ID,
 		Client:     data.Client,
 		CardNumber: data.CardNumber,
 		IBAN:       data.IBAN,
@@ -300,4 +358,13 @@ func (r *bankAccountRoutes) unlockBankAccount(c *gin.Context) {
 	if err != nil {
 		return
 	}
+}
+
+// getFilterFromQuery - returns filter from query.
+func getFilterFromQuery(r *http.Request) (*domain.Filter, error) {
+	filter, err := domain.GetFilterFromQuery(r)
+	if err != nil {
+		return nil, err
+	}
+	return filter, nil
 }

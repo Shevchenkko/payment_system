@@ -21,6 +21,45 @@ func NewPaymentsRepo(mysql *mysql.MySQL) *PaymentsRepo {
 	return &PaymentsRepo{mysql}
 }
 
+// Search payment - used to search payment from the database.
+func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter) (*service.SearchPayments, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	q := p.DB.
+		Table("payments").
+		Offset(filter.Page).
+		Limit(filter.List).
+		Order(filter.OrderString())
+
+	var paymentOutput []service.PaymentOutput
+	var response *service.SearchPayments
+	if err := q.Find(&paymentOutput).Error; err != nil {
+		return nil, &service.Error{Message: "Payments not found"}
+	}
+
+	var count int64
+	q = p.DB.
+		Table("payments")
+	if err := q.Count(&count).Error; err != nil {
+		return nil, &service.Error{Message: "Payments not found"}
+	}
+
+	response = &service.SearchPayments{
+		Data: paymentOutput,
+		Pagination: &domain.Pagination{
+			Order: filter.OrderString(),
+			Page:  filter.Page,
+			List:  filter.List,
+			Total: &count,
+		},
+	}
+
+	return response, nil
+}
+
 // CreatePayment - used to create payment in the database.
 func (p *PaymentsRepo) CreatePayment(ctx context.Context, inp *service.PaymentInput, client *domain.BankAccount) (*domain.Payment, error) {
 	payment := &domain.Payment{
@@ -46,7 +85,7 @@ func (p *PaymentsRepo) CreatePayment(ctx context.Context, inp *service.PaymentIn
 }
 
 // GetPaymentByID is used to get payment by id from the database.
-func (p *PaymentsRepo) GetPaymentByID(ctx context.Context, paymentId int) (*domain.Payment, error) {
+func (p *PaymentsRepo) GetPaymentByID(ctx context.Context, paymentId int64) (*domain.Payment, error) {
 	var payment domain.Payment
 	err := p.DB.
 		WithContext(ctx).
@@ -64,7 +103,7 @@ func (p *PaymentsRepo) GetPaymentByID(ctx context.Context, paymentId int) (*doma
 }
 
 // SentPayment is used to sent payment.
-func (p *PaymentsRepo) SentPayment(ctx context.Context, paymentId int) (string, error) {
+func (p *PaymentsRepo) SentPayment(ctx context.Context, paymentId int64) (string, error) {
 	status := "sent"
 	err := p.DB.
 		Model(domain.Payment{}).
