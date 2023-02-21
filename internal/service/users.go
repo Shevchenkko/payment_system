@@ -9,6 +9,7 @@ import (
 	"time"
 
 	// external
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/pkg/access"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
@@ -23,6 +24,22 @@ type UsersService struct {
 // NewUserService - creates instance of new user service.
 func NewUserService(repos Repositories, apis APIs) *UsersService {
 	return &UsersService{repos, apis}
+}
+
+// SearchUser is used for search users.
+func (us *UsersService) SearchUsers(ctx context.Context, filter *domain.Filter) (*SearchUsers, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	// search users from db
+	response, err := us.repos.Users.SearchUsers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // RegisterUser is used for creating user.

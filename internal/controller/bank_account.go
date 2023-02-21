@@ -63,7 +63,13 @@ func (r *bankAccountRoutes) searchBankAccount(c *gin.Context) {
 		return
 	}
 
-	response, err := r.service.BankAccounts.SearchBankAccounts(c.Request.Context(), filter)
+	// get client
+	client, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+
+	response, err := r.service.BankAccounts.SearchBankAccounts(c.Request.Context(), filter, client.FullName, c.GetString("userRole"))
 	if err != nil {
 		logger.Error("failed to search bank accounts", "err", err)
 		// get service error
@@ -117,7 +123,7 @@ func (r *bankAccountRoutes) createBankAccount(c *gin.Context) {
 
 	// create bank account for client
 	logger.Debug("creating bank account for client")
-	data, err := r.service.CreateBankAccount(c.Request.Context(), c.GetInt("client"),
+	data, err := r.service.CreateBankAccount(c.Request.Context(), c.GetInt("clientID"),
 		&service.BankAccountInput{
 			ITN:         body.ITN,
 			SecretValue: body.SecretValue,
@@ -133,7 +139,7 @@ func (r *bankAccountRoutes) createBankAccount(c *gin.Context) {
 		return
 	}
 
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: fmt.Sprintf("Successfully created bank account %d", data.CardNumber),
 		})
@@ -202,7 +208,7 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 
 	// top up bank account for client
 	logger.Debug("top up bank account for client")
-	data, err := r.service.TopUpBankAccount(c.Request.Context(), c.GetInt("client"),
+	data, err := r.service.TopUpBankAccount(c.Request.Context(), c.GetInt("clientID"),
 		&service.TopUpBankAccountInput{
 			OperationAmount: cardBalance,
 			CardNumber:      body.CardNumber,
@@ -218,7 +224,7 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 		return
 	}
 
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: fmt.Sprintf("Successfully toping up bank account %d on operation amount %0.2f", data.CardNumber, body.OperationAmount),
 		})
@@ -239,7 +245,7 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 // lockBankAccountRequestBody - represents lockBankAccount request body.
 type lockBankAccountRequestBody struct {
 	CardNumber  int64  `json:"cardNumber" binding:"required"`
-	SecretValue string `json:"secretValue" binding:"required"`
+	SecretValue string `json:"secretValue"`
 }
 
 // lockBankAccountResponse - represents lockBankAccount response.
@@ -262,9 +268,15 @@ func (r *bankAccountRoutes) lockBankAccount(c *gin.Context) {
 	}
 	logger = logger.With("body", body)
 
+	// get client
+	client, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+
 	// lock bank account
 	logger.Debug("bank account blocking")
-	status, err := r.service.BlockBankAccount(c.Request.Context(), c.GetString("userRole"),
+	status, err := r.service.BlockBankAccount(c.Request.Context(), client.FullName, c.GetString("userRole"),
 		&service.ChangeBankAccountInput{
 			CardNumber:  body.CardNumber,
 			SecretValue: body.SecretValue,
@@ -289,7 +301,7 @@ func (r *bankAccountRoutes) lockBankAccount(c *gin.Context) {
 	} else {
 		mess = fmt.Sprintf("%s for bank account %d", status, body.CardNumber)
 	}
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: mess,
 		})
@@ -301,7 +313,7 @@ func (r *bankAccountRoutes) lockBankAccount(c *gin.Context) {
 // unlockBankAccountRequestBody - represents unlockBankAccount request body.
 type unlockBankAccountRequestBody struct {
 	CardNumber  int64  `json:"cardNumber" binding:"required"`
-	SecretValue string `json:"secretValue" binding:"required"`
+	SecretValue string `json:"secretValue"`
 }
 
 // unlockBankAccountResponse - represents unlockBankAccount response.
@@ -324,9 +336,15 @@ func (r *bankAccountRoutes) unlockBankAccount(c *gin.Context) {
 	}
 	logger = logger.With("body", body)
 
+	// get client
+	client, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+
 	// unlock bank account
 	logger.Debug("bank account unlocking")
-	status, err := r.service.UnlockBankAccount(c.Request.Context(), c.GetString("userRole"),
+	status, err := r.service.UnlockBankAccount(c.Request.Context(), client.FullName, c.GetString("userRole"),
 		&service.ChangeBankAccountInput{
 			CardNumber:  body.CardNumber,
 			SecretValue: body.SecretValue,
@@ -351,7 +369,7 @@ func (r *bankAccountRoutes) unlockBankAccount(c *gin.Context) {
 	} else {
 		mess = fmt.Sprintf("%s for bank account %d", status, body.CardNumber)
 	}
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: mess,
 		})

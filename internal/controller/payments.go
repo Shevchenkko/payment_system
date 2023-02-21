@@ -61,7 +61,13 @@ func (r *paymentRoutes) searchPayment(c *gin.Context) {
 		return
 	}
 
-	response, err := r.service.Payments.SearchPayments(c.Request.Context(), filter)
+	// get client
+	client, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+
+	response, err := r.service.Payments.SearchPayments(c.Request.Context(), filter, client.FullName)
 	if err != nil {
 		logger.Error("failed to search payments", "err", err)
 		// get service error
@@ -132,7 +138,7 @@ func (r *paymentRoutes) createPayment(c *gin.Context) {
 
 	// create payment for client
 	logger.Debug("creating payment for client")
-	data, err := r.service.CreatePayment(c.Request.Context(), c.GetInt("client"),
+	data, err := r.service.CreatePayment(c.Request.Context(), c.GetInt("clientID"),
 		&service.PaymentInput{
 			FromClientIBAN:  body.FromClientIBAN,
 			Description:     body.Description,
@@ -151,7 +157,7 @@ func (r *paymentRoutes) createPayment(c *gin.Context) {
 		return
 	}
 
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: fmt.Sprintf("Successfully created payment from %s to %s", data.FromClient, data.ToClient),
 		})
@@ -241,7 +247,7 @@ func (r *paymentRoutes) sentPayment(c *gin.Context) {
 		return
 	}
 
-	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("client"),
+	_, err = r.service.MessageLogs.CreateMessageLog(c.Request.Context(), c.GetInt("clientID"),
 		&service.MessageLogInput{
 			MessageLog: fmt.Sprintf("Successfully sent payment #%d", body.PaymentID),
 		})

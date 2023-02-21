@@ -47,11 +47,22 @@ type Services struct {
 
 // Users - represents users service interface.
 type Users interface {
+	SearchUsers(ctx context.Context, filter *domain.Filter) (*SearchUsers, error)
 	RegisterUser(ctx context.Context, inp *RegisterUserInput) (RegisterUserOutput, error)
 	LoginUser(ctx context.Context, inp *LoginUserInput) (LoginUserOutput, error)
 	VerifyAccessToken(ctx context.Context, token string) (bool, int, string)
 	SendEmail(ctx context.Context, inp *SendUserEmailInput) error
 	ResetPassword(ctx context.Context, inp *ResetPasswordInput) error
+}
+
+type SearchUsers struct {
+	Data       []User             `json:"data"`
+	Pagination *domain.Pagination `json:"pagination"`
+}
+
+type User struct {
+	ID       string `json:"id"`
+	FullName string `json:"fullName"`
 }
 
 // RegisterUserInput represents input used to register user.
@@ -90,11 +101,11 @@ type SendUserEmailInput struct {
 }
 
 type BankAccounts interface {
-	SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*SearchBankAccounts, error)
+	SearchBankAccounts(ctx context.Context, filter *domain.Filter, client string, role string) (*SearchBankAccounts, error)
 	CreateBankAccount(ctx context.Context, userId int, inp *BankAccountInput) (BankAccountOutput, error)
 	TopUpBankAccount(ctx context.Context, userId int, inp *TopUpBankAccountInput) (BankAccountOutput, error)
-	BlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
-	UnlockBankAccount(ctx context.Context, userRole string, inp *ChangeBankAccountInput) (string, error)
+	BlockBankAccount(ctx context.Context, client string, userRole string, inp *ChangeBankAccountInput) (string, error)
+	UnlockBankAccount(ctx context.Context, client string, userRole string, inp *ChangeBankAccountInput) (string, error)
 }
 
 type SearchBankAccounts struct {
@@ -126,7 +137,7 @@ type ChangeBankAccountInput struct {
 }
 
 type Payments interface {
-	SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error)
+	SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*SearchPayments, error)
 	CreatePayment(ctx context.Context, userId int, inp *PaymentInput) (*PaymentOutput, error)
 	SentPayment(ctx context.Context, paymentId int64, secretValue string, cardBalance float64) (string, error)
 }

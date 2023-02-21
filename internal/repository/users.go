@@ -25,6 +25,45 @@ func NewUsersRepo(mysql *mysql.MySQL) *UsersRepo {
 	return &UsersRepo{mysql}
 }
 
+// Search users - used to search user from the database.
+func (r *UsersRepo) SearchUsers(ctx context.Context, filter *domain.Filter) (*service.SearchUsers, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	q := r.DB.
+		Table("users").
+		Offset((filter.Page - 1) * filter.List).
+		Limit(filter.List).
+		Order(filter.OrderString())
+
+	var userOutput []service.User
+	var response *service.SearchUsers
+	if err := q.Find(&userOutput).Error; err != nil {
+		return nil, &service.Error{Message: "Users not found"}
+	}
+
+	var count int64
+	q = r.DB.
+		Table("users")
+	if err := q.Count(&count).Error; err != nil {
+		return nil, &service.Error{Message: "Users not found"}
+	}
+
+	response = &service.SearchUsers{
+		Data: userOutput,
+		Pagination: &domain.Pagination{
+			Order: filter.OrderString(),
+			Page:  filter.Page,
+			List:  filter.List,
+			Total: &count,
+		},
+	}
+
+	return response, nil
+}
+
 // CreateUser - used to create user in the database.
 func (r *UsersRepo) CreateUser(ctx context.Context, inp *service.RegisterUserInput) (*domain.User, error) {
 	isExists, _ := r.GetUser(ctx, inp.Email)
@@ -87,7 +126,7 @@ func (r *UsersRepo) GetUserByID(ctx context.Context, userId int) (*domain.User, 
 		return nil, err
 	}
 
-	return &user, nil
+	return &user, err
 }
 
 // CreateToken - used to create token in the database.

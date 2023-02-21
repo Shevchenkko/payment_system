@@ -19,14 +19,14 @@ func NewPaymentService(repos Repositories) *PaymentsService {
 }
 
 // SearchPayment is used for search payments.
-func (p *PaymentsService) SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error) {
+func (p *PaymentsService) SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*SearchPayments, error) {
 	if filter == nil {
 		filter = new(domain.Filter)
 		filter.Validate()
 	}
 
 	// search payments from db
-	response, err := p.repos.Payments.SearchPayments(ctx, filter)
+	response, err := p.repos.Payments.SearchPayments(ctx, filter, client)
 	if err != nil {
 		return nil, err
 	}

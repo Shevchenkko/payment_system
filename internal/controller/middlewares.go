@@ -55,7 +55,7 @@ func newAuthMiddleware(services service.Services, l logger.Interface) gin.Handle
 		}
 
 		// set user id to context
-		c.Set("client", client)
+		c.Set("clientID", client)
 
 		// set user role to context
 		c.Set("userRole", userRole)

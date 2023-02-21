@@ -67,6 +67,8 @@ func (f *Filter) validatedSortBy() []string {
 			validatedSortBy = "updated_at"
 		case "paymentstatus":
 			validatedSortBy = "payment_status"
+		case "fullname":
+			validatedSortBy = "full_name"
 		}
 		if len(tokens) == 2 {
 			switch strings.ToLower(tokens[1]) {

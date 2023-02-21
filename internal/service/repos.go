@@ -22,6 +22,7 @@ type Repositories struct {
 
 // UsersRepo - represents users repository interface.
 type UsersRepo interface {
+	SearchUsers(ctx context.Context, filter *domain.Filter) (*SearchUsers, error)
 	GetUser(ctx context.Context, email string) (*domain.User, error)
 	GetUserByID(ctx context.Context, userId int) (*domain.User, error)
 	CreateUser(ctx context.Context, inp *RegisterUserInput) (*domain.User, error)
@@ -44,7 +45,7 @@ type ResetPasswordInput struct {
 }
 
 type BankAccountsRepo interface {
-	SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*SearchBankAccounts, error)
+	SearchBankAccounts(ctx context.Context, filter *domain.Filter, client string, role string) (*SearchBankAccounts, error)
 	CreateBankAccount(ctx context.Context, inp *BankAccountInput, client string) (*domain.BankAccount, error)
 	TopUpBankAccount(ctx context.Context, inp *TopUpBankAccountInput, balance float64) error
 	CheckCreditCard(ctx context.Context, cardNumber int64) (*domain.BankAccount, error)
@@ -53,7 +54,7 @@ type BankAccountsRepo interface {
 }
 
 type PaymentsRepo interface {
-	SearchPayments(ctx context.Context, filter *domain.Filter) (*SearchPayments, error)
+	SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*SearchPayments, error)
 	CreatePayment(ctx context.Context, inp *PaymentInput, client *domain.BankAccount) (*domain.Payment, error)
 	SentPayment(ctx context.Context, paymentId int64) (string, error)
 	GetPaymentByID(ctx context.Context, paymentId int64) (*domain.Payment, error)

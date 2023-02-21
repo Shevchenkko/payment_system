@@ -11,6 +11,7 @@ import (
 	"github.com/Shevchenkko/payment_system/pkg/logger"
 
 	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
 )
 
@@ -26,10 +27,70 @@ func newUserRoutes(handler *gin.RouterGroup, s service.Services, l logger.Interf
 	h := handler.Group("/users")
 	{
 		// routes
+		h.GET("/search", newAuthMiddleware(s, l), r.searchUser)
 		h.POST("/register", r.registerUser)
 		h.POST("/login", r.loginUser)
 		h.POST("/sendemail", r.sendEmail)
 		h.PATCH("/resetpassword", r.resetPassword)
+	}
+}
+
+// searchUserRequestQuery - represents search user request query.
+type searchUsertRequestQuery struct {
+	Filter domain.Filter `form:"filter"`
+}
+
+// searchUserResponse - represents search user response.
+type searchUserResponse struct {
+	Data       []service.User     `json:"data"`
+	Pagination *domain.Pagination `json:"pagination"`
+
+	Error *service.Error `json:"error,omitempty"`
+}
+
+func (r *userRoutes) searchUser(c *gin.Context) {
+	logger := r.logger.Named("searchUser")
+
+	filter, err := getFilterFromQuery(c.Request)
+	if err != nil {
+		logger.Error("failed to parse query params", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse query params")
+		return
+	}
+
+	// parse request query
+	var query searchUsertRequestQuery
+	logger.Info("parsing request query")
+	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.Error("failed to parse request query", "err", err)
+		errorResponse(c, http.StatusBadRequest, "failed to parse request query")
+		return
+	}
+
+	// chear role
+	if c.GetString("userRole") == "admin" {
+		response, err := r.service.Users.SearchUsers(c.Request.Context(), filter)
+		if err != nil {
+			logger.Error("failed to search users", "err", err)
+			// get service error
+			err, ok := err.(*service.Error)
+			if ok {
+				c.AbortWithStatusJSON(http.StatusBadRequest, searchUserResponse{Error: err})
+				return
+			}
+			errorResponse(c, http.StatusInternalServerError, "failed to search users")
+			return
+		}
+		logger = logger.With("search user", response)
+		logger.Debug("got user")
+
+		logger.Info("successfully search users")
+		c.JSON(http.StatusOK, searchUserResponse{
+			Data:       response.Data,
+			Pagination: response.Pagination,
+		})
+	} else {
+		c.JSON(http.StatusForbidden, "you need admin rights!")
 	}
 }
 

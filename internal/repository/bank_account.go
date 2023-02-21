@@ -24,7 +24,7 @@ func NewBankAccountsRepo(mysql *mysql.MySQL) *BankAccountsRepo {
 }
 
 // Search bank account - used to search bank account from the database.
-func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domain.Filter) (*service.SearchBankAccounts, error) {
+func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domain.Filter, client string, role string) (*service.SearchBankAccounts, error) {
 	if filter == nil {
 		filter = new(domain.Filter)
 		filter.Validate()
@@ -38,8 +38,16 @@ func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domai
 
 	var bankAccountOutput []service.BankAccountOutput
 	var response *service.SearchBankAccounts
-	if err := q.Find(&bankAccountOutput).Error; err != nil {
-		return nil, &service.Error{Message: "Bank accounts not found"}
+
+	if role == "admin" {
+		if err := q.Find(&bankAccountOutput).Error; err != nil {
+			return nil, &service.Error{Message: "Bank accounts not found"}
+		}
+	} else {
+		if err := q.Where("client = ?", client).
+			Find(&bankAccountOutput).Error; err != nil {
+			return nil, &service.Error{Message: "Bank accounts not found"}
+		}
 	}
 
 	var count int64

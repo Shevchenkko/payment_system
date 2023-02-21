@@ -22,7 +22,7 @@ func NewPaymentsRepo(mysql *mysql.MySQL) *PaymentsRepo {
 }
 
 // Search payment - used to search payment from the database.
-func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter) (*service.SearchPayments, error) {
+func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*service.SearchPayments, error) {
 	if filter == nil {
 		filter = new(domain.Filter)
 		filter.Validate()
@@ -36,7 +36,8 @@ func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter
 
 	var paymentOutput []service.PaymentOutput
 	var response *service.SearchPayments
-	if err := q.Find(&paymentOutput).Error; err != nil {
+	if err := q.Where("from_client = ?", client).
+		Find(&paymentOutput).Error; err != nil {
 		return nil, &service.Error{Message: "Payments not found"}
 	}
 
