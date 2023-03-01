@@ -1,4 +1,3 @@
-// Package app represents application.
 package app
 
 import (

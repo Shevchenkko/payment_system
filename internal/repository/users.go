@@ -1,14 +1,16 @@
-// Package repository implements application repository.
 package repository
 
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	// third party
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	// external
 	"github.com/Shevchenkko/payment_system/pkg/mysql"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 
 	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
@@ -192,4 +194,19 @@ func (r *UsersRepo) ResetPassword(ctx context.Context, inp *service.ResetPasswor
 	}
 
 	return err
+}
+
+// ChangeUserStatus is used to update user status in the database.
+func (r *UsersRepo) ChangeUserStatus(ctx context.Context, userId int64, status string) (string, error) {
+	err := r.DB.
+		Model(domain.User{}).
+		Where("id = ?", userId).
+		Update("status", status).
+		Error
+	if err != nil {
+		return "", err
+	}
+	updatedStatus := fmt.Sprintf("User status changed to %s", status)
+
+	return updatedStatus, err
 }

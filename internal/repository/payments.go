@@ -5,10 +5,15 @@ import (
 	"errors"
 	"fmt"
 
+	// third party
+	"gorm.io/gorm"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/mysql"
+
+	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/mysql"
-	"gorm.io/gorm"
 )
 
 // PaymentsRepo - represents payments repository.
@@ -21,7 +26,7 @@ func NewPaymentsRepo(mysql *mysql.MySQL) *PaymentsRepo {
 	return &PaymentsRepo{mysql}
 }
 
-// Search payment - used to search payment from the database.
+// SearchPayments - used to search payment from the database.
 func (p *PaymentsRepo) SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*service.SearchPayments, error) {
 	if filter == nil {
 		filter = new(domain.Filter)
@@ -85,7 +90,7 @@ func (p *PaymentsRepo) CreatePayment(ctx context.Context, inp *service.PaymentIn
 	return payment, nil
 }
 
-// GetPaymentByID is used to get payment by id from the database.
+// GetPaymentByID - used to get payment by id from the database.
 func (p *PaymentsRepo) GetPaymentByID(ctx context.Context, paymentId int64) (*domain.Payment, error) {
 	var payment domain.Payment
 	err := p.DB.
@@ -103,7 +108,7 @@ func (p *PaymentsRepo) GetPaymentByID(ctx context.Context, paymentId int64) (*do
 	return &payment, nil
 }
 
-// SentPayment is used to sent payment.
+// SentPayment - used to sent payment.
 func (p *PaymentsRepo) SentPayment(ctx context.Context, paymentId int64) (string, error) {
 	status := "sent"
 	err := p.DB.

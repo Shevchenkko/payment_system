@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Shevchenkko/payment_system/internal/domain"
+	// third party
 	"golang.org/x/crypto/bcrypt"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
 // BankAccountsService - represents bank accounts service.
@@ -49,6 +52,7 @@ func (b *BankAccountsService) CreateBankAccount(ctx context.Context, userId int,
 
 	return BankAccountOutput{
 		ID:         account.ID,
+		Status:     account.Status,
 		Client:     client.FullName,
 		CardNumber: account.CardNumber,
 		IBAN:       account.IBAN,

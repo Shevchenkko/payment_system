@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Shevchenkko/payment_system/internal/domain"
+	// third party
 	"golang.org/x/crypto/bcrypt"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
 // PaymentsService - represents payments service.
@@ -18,7 +21,7 @@ func NewPaymentService(repos Repositories) *PaymentsService {
 	return &PaymentsService{repos}
 }
 
-// SearchPayment is used for search payments.
+// SearchPayments is used for search payments.
 func (p *PaymentsService) SearchPayments(ctx context.Context, filter *domain.Filter, client string) (*SearchPayments, error) {
 	if filter == nil {
 		filter = new(domain.Filter)

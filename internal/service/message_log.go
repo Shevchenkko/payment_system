@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
@@ -16,7 +17,7 @@ func NewMessageLogsService(repos Repositories) *MessageLogsService {
 	return &MessageLogsService{repos}
 }
 
-// CreateMessageLog - used to create message log.
+// CreateMessageLog is used to create message log.
 func (m *MessageLogsService) CreateMessageLog(ctx context.Context, userId int, inp *MessageLogInput) (*domain.MessageLog, error) {
 	client, err := m.repos.Users.GetUserByID(ctx, userId)
 	if err != nil {
@@ -33,4 +34,20 @@ func (m *MessageLogsService) CreateMessageLog(ctx context.Context, userId int, i
 	}
 
 	return message, nil
+}
+
+// SearchLogs is used for search logs.
+func (m *MessageLogsService) SearchLogs(ctx context.Context, filter *domain.Filter, client string, role string) (*SearchLogs, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	// search logs from db
+	response, err := m.repos.Messages.SearchLogs(ctx, filter, client, role)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

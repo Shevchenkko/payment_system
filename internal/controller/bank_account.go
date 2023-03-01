@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
+	// third party
+	"github.com/gin-gonic/gin"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/logger"
+
+	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/logger"
-	"github.com/gin-gonic/gin"
 )
 
 // bankAccountRoutes - represents bank account service router.
@@ -68,6 +73,10 @@ func (r *bankAccountRoutes) searchBankAccount(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	if client.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	response, err := r.service.BankAccounts.SearchBankAccounts(c.Request.Context(), filter, client.FullName, c.GetString("userRole"))
 	if err != nil {
@@ -120,6 +129,16 @@ func (r *bankAccountRoutes) createBankAccount(c *gin.Context) {
 		return
 	}
 	logger = logger.With("body", body)
+
+	// check user
+	userStatus, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+	if userStatus.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	// create bank account for client
 	logger.Debug("creating bank account for client")
@@ -186,6 +205,16 @@ func (r *bankAccountRoutes) topUpBankAccount(c *gin.Context) {
 		return
 	}
 	logger = logger.With("body", body)
+
+	// check user
+	userStatus, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+	if userStatus.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	var cardBalance float64
 	if body.OperationAmount > 0 {
@@ -273,6 +302,10 @@ func (r *bankAccountRoutes) lockBankAccount(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	if client.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	// lock bank account
 	logger.Debug("bank account blocking")
@@ -285,7 +318,7 @@ func (r *bankAccountRoutes) lockBankAccount(c *gin.Context) {
 		logger.Error("failed to block bank account", "err", err)
 		err, ok := err.(*service.Error)
 		if ok {
-			c.AbortWithStatusJSON(http.StatusBadRequest, resetPasswordResponse{Error: err})
+			c.AbortWithStatusJSON(http.StatusBadRequest, lockBankAccountResponse{Error: err})
 			return
 		}
 		errorResponse(c, http.StatusInternalServerError, "failed to block account")
@@ -341,6 +374,10 @@ func (r *bankAccountRoutes) unlockBankAccount(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	if client.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	// unlock bank account
 	logger.Debug("bank account unlocking")
@@ -353,7 +390,7 @@ func (r *bankAccountRoutes) unlockBankAccount(c *gin.Context) {
 		logger.Error("failed to unlock bank account", "err", err)
 		err, ok := err.(*service.Error)
 		if ok {
-			c.AbortWithStatusJSON(http.StatusBadRequest, resetPasswordResponse{Error: err})
+			c.AbortWithStatusJSON(http.StatusBadRequest, lockBankAccountResponse{Error: err})
 			return
 		}
 		errorResponse(c, http.StatusInternalServerError, "failed to unlock account")

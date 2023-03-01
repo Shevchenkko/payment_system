@@ -1,4 +1,3 @@
-// Package service implements application services.
 package service
 
 import (
@@ -30,6 +29,7 @@ type UsersRepo interface {
 	CreateToken(ctx context.Context, inp GenerateTokenInput) error
 	DeleteToken(ctx context.Context, token string) error
 	ResetPassword(ctx context.Context, inp *ResetPasswordInput) error
+	ChangeUserStatus(ctx context.Context, userId int64, status string) (string, error)
 }
 
 // GenerateTokenInput represents input used to generate token.
@@ -62,4 +62,5 @@ type PaymentsRepo interface {
 
 type MessageLogsRepo interface {
 	CreateMessageLog(ctx context.Context, inp *MessageLogInput) (*domain.MessageLog, error)
+	SearchLogs(ctx context.Context, filter *domain.Filter, client string, role string) (*SearchLogs, error)
 }

@@ -1,4 +1,3 @@
-// Package mysql implements mysql db connection.
 package mysql
 
 import (

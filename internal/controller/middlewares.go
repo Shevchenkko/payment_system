@@ -1,4 +1,3 @@
-// Package controller implements application http delivery.
 package controller
 
 import (
@@ -6,9 +5,13 @@ import (
 	"strings"
 
 	// third party
-	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/gin-gonic/gin"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/logger"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/service"
 )
 
 // corsMiddleware - used to allow incoming cross-origin requests.

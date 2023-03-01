@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
+	// third party
+	"github.com/gin-gonic/gin"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/logger"
+
+	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
 	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/logger"
-	"github.com/gin-gonic/gin"
 )
 
 // paymentRoutes - represents payment service router.
@@ -64,6 +69,10 @@ func (r *paymentRoutes) searchPayment(c *gin.Context) {
 	// get client
 	client, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
 	if err != nil {
+		return
+	}
+	if client.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
 		return
 	}
 
@@ -126,6 +135,16 @@ func (r *paymentRoutes) createPayment(c *gin.Context) {
 		return
 	}
 	logger = logger.With("body", body)
+
+	// check user
+	userStatus, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+	if userStatus.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	// check pperation amount
 	var operationAmount float64
@@ -206,6 +225,16 @@ func (r *paymentRoutes) sentPayment(c *gin.Context) {
 		return
 	}
 	logger = logger.With("body", body)
+
+	// check user
+	userStatus, err := r.repos.Users.GetUserByID(c.Request.Context(), c.GetInt("clientID"))
+	if err != nil {
+		return
+	}
+	if userStatus.Status == "LOCK" {
+		errorResponse(c, http.StatusInternalServerError, "Your account is blocked! Please, turn to the nearest branch of our bank")
+		return
+	}
 
 	// get payment
 	payment, err := r.repos.Payments.GetPaymentByID(c.Request.Context(), body.PaymentID)

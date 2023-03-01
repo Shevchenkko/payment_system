@@ -1,4 +1,3 @@
-// Package domain implements application domain.
 package domain
 
 import (
@@ -8,6 +7,7 @@ import (
 // User represents the user model stored in the database.
 type User struct {
 	ID       int    `json:"id,omitempty" gorm:"primaryKey"`
+	Status   string `json:"status,omitempty" gorm:"column:status;type:enum('ACTIVE','LOCK');default:'ACTIVE'"`
 	FullName string `json:"fullName,omitempty"`
 	Email    string `json:"email,omitempty" gorm:"column:email;not null;unique;index"`
 	Password string `json:"password,omitempty"`

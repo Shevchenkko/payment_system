@@ -1,4 +1,3 @@
-// Package service implements application services.
 package service
 
 import (
@@ -8,11 +7,15 @@ import (
 	"os"
 	"time"
 
-	// external
-	"github.com/Shevchenkko/payment_system/internal/domain"
-	"github.com/Shevchenkko/payment_system/pkg/access"
+	// third party
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/access"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
 // UsersService - represents users service.
@@ -243,4 +246,52 @@ func (us *UsersService) ResetPassword(ctx context.Context, inp *ResetPasswordInp
 	}
 
 	return nil
+}
+
+// LockUser is used for lock user.
+func (us *UsersService) LockUser(ctx context.Context, userId int64, userRole string) (string, error) {
+	status, err := us.repos.Users.GetUserByID(ctx, int(userId))
+	if err != nil {
+		return "", err
+	}
+	var accountChange string
+
+	// check user role
+	if userRole == "admin" {
+		if status.Status == "ACTIVE" {
+			accountChange, err = us.repos.Users.ChangeUserStatus(ctx, userId, "LOCK")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			accountChange = "The account has already been blocked"
+		}
+	} else {
+		accountChange = "You need admin rights!"
+	}
+	return accountChange, nil
+}
+
+// UnlockUser is used for unlock user.
+func (us *UsersService) UnlockUser(ctx context.Context, userId int64, userRole string) (string, error) {
+	status, err := us.repos.Users.GetUserByID(ctx, int(userId))
+	if err != nil {
+		return "", err
+	}
+	var accountChange string
+
+	// check user role
+	if userRole == "admin" {
+		if status.Status == "LOCK" {
+			accountChange, err = us.repos.Users.ChangeUserStatus(ctx, userId, "ACTIVE")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			accountChange = "The account has already been active"
+		}
+	} else {
+		accountChange = "You need admin rights!"
+	}
+	return accountChange, nil
 }

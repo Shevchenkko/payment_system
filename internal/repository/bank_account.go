@@ -5,12 +5,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Shevchenkko/payment_system/internal/domain"
-	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/mysql"
-	"github.com/Shevchenkko/payment_system/pkg/utils"
+	// third party
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/mysql"
+	"github.com/Shevchenkko/payment_system/pkg/utils"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
+	"github.com/Shevchenkko/payment_system/internal/service"
 )
 
 // BankAccountsRepo - represents bank account repository.
@@ -23,7 +28,7 @@ func NewBankAccountsRepo(mysql *mysql.MySQL) *BankAccountsRepo {
 	return &BankAccountsRepo{mysql}
 }
 
-// Search bank account - used to search bank account from the database.
+// SearchBankAccounts - used to search bank account from the database.
 func (b *BankAccountsRepo) SearchBankAccounts(ctx context.Context, filter *domain.Filter, client string, role string) (*service.SearchBankAccounts, error) {
 	if filter == nil {
 		filter = new(domain.Filter)
@@ -112,7 +117,7 @@ func (b *BankAccountsRepo) TopUpBankAccount(ctx context.Context, inp *service.To
 	return err
 }
 
-// Check the credit card in the database.
+// CheckCreditCard - used to check credit card in the database.
 func (b *BankAccountsRepo) CheckCreditCard(ctx context.Context, cardNumber int64) (*domain.BankAccount, error) {
 	var card domain.BankAccount
 	err := b.DB.
@@ -130,7 +135,7 @@ func (b *BankAccountsRepo) CheckCreditCard(ctx context.Context, cardNumber int64
 	return &card, nil
 }
 
-// Get credit card info by IBAN in the database.
+// GetInfoByIBAN - used to get credit card info by IBAN in the database.
 func (b *BankAccountsRepo) GetInfoByIBAN(ctx context.Context, IBAN string) (*domain.BankAccount, error) {
 	var card domain.BankAccount
 	err := b.DB.
@@ -148,7 +153,7 @@ func (b *BankAccountsRepo) GetInfoByIBAN(ctx context.Context, IBAN string) (*dom
 	return &card, nil
 }
 
-// Change the credit card in the database.
+// ChangeCreditCardStatus - used to change the credit card in the database.
 func (b *BankAccountsRepo) ChangeCreditCardStatus(ctx context.Context, cardNumber int64, status string) (string, error) {
 	err := b.DB.
 		Model(domain.BankAccount{}).
