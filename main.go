@@ -1,4 +1,3 @@
-// Package main creates and runs application instance.
 package main
 
 import (

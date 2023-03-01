@@ -1,4 +1,3 @@
-// Package controller implements application http delivery.
 package controller
 
 import (
@@ -6,9 +5,13 @@ import (
 	"strings"
 
 	// third party
-	"github.com/Shevchenkko/payment_system/internal/service"
-	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/gin-gonic/gin"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/logger"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/service"
 )
 
 // corsMiddleware - used to allow incoming cross-origin requests.
@@ -47,7 +50,7 @@ func newAuthMiddleware(services service.Services, l logger.Interface) gin.Handle
 
 		// get token
 		tokenString := tokenStringArr[1]
-		valid, userID, userRole := services.Users.VerifyAccessToken(c.Request.Context(), tokenString)
+		valid, client, userRole := services.Users.VerifyAccessToken(c.Request.Context(), tokenString)
 		if !valid {
 			logger.Debug("invalid auth token", "tokenStringArr", tokenStringArr)
 			errorResponse(c, http.StatusUnauthorized, "invalid auth token")
@@ -55,7 +58,7 @@ func newAuthMiddleware(services service.Services, l logger.Interface) gin.Handle
 		}
 
 		// set user id to context
-		c.Set("userID", userID)
+		c.Set("clientID", client)
 
 		// set user role to context
 		c.Set("userRole", userRole)

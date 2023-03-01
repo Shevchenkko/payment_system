@@ -1,4 +1,3 @@
-// Package service implements application services.
 package service
 
 import (
@@ -8,10 +7,15 @@ import (
 	"os"
 	"time"
 
-	// external
-	"github.com/Shevchenkko/payment_system/pkg/access"
+	// third party
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
+
+	// external
+	"github.com/Shevchenkko/payment_system/pkg/access"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/domain"
 )
 
 // UsersService - represents users service.
@@ -23,6 +27,22 @@ type UsersService struct {
 // NewUserService - creates instance of new user service.
 func NewUserService(repos Repositories, apis APIs) *UsersService {
 	return &UsersService{repos, apis}
+}
+
+// SearchUser is used for search users.
+func (us *UsersService) SearchUsers(ctx context.Context, filter *domain.Filter) (*SearchUsers, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	// search users from db
+	response, err := us.repos.Users.SearchUsers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // RegisterUser is used for creating user.
@@ -118,7 +138,7 @@ func (us *UsersService) LoginUser(ctx context.Context, inp *LoginUserInput) (Log
 }
 
 // VerifyAccessToken is used to verify user jwt access token.
-func (s *UsersService) VerifyAccessToken(ctx context.Context, token string) (bool, int, string) {
+func (us *UsersService) VerifyAccessToken(ctx context.Context, token string) (bool, int, string) {
 	tokenData, err := access.DecodeToken(token, os.Getenv("HMAC_SECRET"))
 	if err != nil {
 		return false, 0, ""
@@ -226,4 +246,52 @@ func (us *UsersService) ResetPassword(ctx context.Context, inp *ResetPasswordInp
 	}
 
 	return nil
+}
+
+// LockUser is used for lock user.
+func (us *UsersService) LockUser(ctx context.Context, userId int64, userRole string) (string, error) {
+	status, err := us.repos.Users.GetUserByID(ctx, int(userId))
+	if err != nil {
+		return "", err
+	}
+	var accountChange string
+
+	// check user role
+	if userRole == "admin" {
+		if status.Status == "ACTIVE" {
+			accountChange, err = us.repos.Users.ChangeUserStatus(ctx, userId, "LOCK")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			accountChange = "The account has already been blocked"
+		}
+	} else {
+		accountChange = "You need admin rights!"
+	}
+	return accountChange, nil
+}
+
+// UnlockUser is used for unlock user.
+func (us *UsersService) UnlockUser(ctx context.Context, userId int64, userRole string) (string, error) {
+	status, err := us.repos.Users.GetUserByID(ctx, int(userId))
+	if err != nil {
+		return "", err
+	}
+	var accountChange string
+
+	// check user role
+	if userRole == "admin" {
+		if status.Status == "LOCK" {
+			accountChange, err = us.repos.Users.ChangeUserStatus(ctx, userId, "ACTIVE")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			accountChange = "The account has already been active"
+		}
+	} else {
+		accountChange = "You need admin rights!"
+	}
+	return accountChange, nil
 }

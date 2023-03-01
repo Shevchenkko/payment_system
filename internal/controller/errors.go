@@ -1,4 +1,3 @@
-// Package controller implements application http delivery.
 package controller
 
 import (

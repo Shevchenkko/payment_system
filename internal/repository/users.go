@@ -1,14 +1,16 @@
-// Package repository implements application repository.
 package repository
 
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	// third party
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	// external
 	"github.com/Shevchenkko/payment_system/pkg/mysql"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 
 	// internal
 	"github.com/Shevchenkko/payment_system/internal/domain"
@@ -23,6 +25,45 @@ type UsersRepo struct {
 // NewUsersRepo - create new instance of users repo.
 func NewUsersRepo(mysql *mysql.MySQL) *UsersRepo {
 	return &UsersRepo{mysql}
+}
+
+// Search users - used to search user from the database.
+func (r *UsersRepo) SearchUsers(ctx context.Context, filter *domain.Filter) (*service.SearchUsers, error) {
+	if filter == nil {
+		filter = new(domain.Filter)
+		filter.Validate()
+	}
+
+	q := r.DB.
+		Table("users").
+		Offset((filter.Page - 1) * filter.List).
+		Limit(filter.List).
+		Order(filter.OrderString())
+
+	var userOutput []service.User
+	var response *service.SearchUsers
+	if err := q.Find(&userOutput).Error; err != nil {
+		return nil, &service.Error{Message: "Users not found"}
+	}
+
+	var count int64
+	q = r.DB.
+		Table("users")
+	if err := q.Count(&count).Error; err != nil {
+		return nil, &service.Error{Message: "Users not found"}
+	}
+
+	response = &service.SearchUsers{
+		Data: userOutput,
+		Pagination: &domain.Pagination{
+			Order: filter.OrderString(),
+			Page:  filter.Page,
+			List:  filter.List,
+			Total: &count,
+		},
+	}
+
+	return response, nil
 }
 
 // CreateUser - used to create user in the database.
@@ -66,11 +107,28 @@ func (r *UsersRepo) GetUser(ctx context.Context, email string) (*domain.User, er
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, &service.Error{Message: "User not registered"}
 		}
-
 		return nil, err
 	}
 
 	return &user, nil
+}
+
+// GetUserByID is used to get user by id from the database.
+func (r *UsersRepo) GetUserByID(ctx context.Context, userId int) (*domain.User, error) {
+	var user domain.User
+	err := r.DB.
+		WithContext(ctx).
+		Where("id = ?", userId).
+		First(&user).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, &service.Error{Message: "User not found"}
+		}
+		return nil, err
+	}
+
+	return &user, err
 }
 
 // CreateToken - used to create token in the database.
@@ -102,7 +160,6 @@ func (r *UsersRepo) GetToken(ctx context.Context, token string) (*domain.UserTok
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, &service.Error{Message: "User with provided token not found"}
 		}
-
 		return nil, err
 	}
 
@@ -137,4 +194,19 @@ func (r *UsersRepo) ResetPassword(ctx context.Context, inp *service.ResetPasswor
 	}
 
 	return err
+}
+
+// ChangeUserStatus is used to update user status in the database.
+func (r *UsersRepo) ChangeUserStatus(ctx context.Context, userId int64, status string) (string, error) {
+	err := r.DB.
+		Model(domain.User{}).
+		Where("id = ?", userId).
+		Update("status", status).
+		Error
+	if err != nil {
+		return "", err
+	}
+	updatedStatus := fmt.Sprintf("User status changed to %s", status)
+
+	return updatedStatus, err
 }

@@ -1,4 +1,3 @@
-// Package api implements external api calls.
 package emails
 
 import (
@@ -6,8 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Shevchenkko/payment_system/internal/service"
+	// third party
 	gomail "gopkg.in/mail.v2"
+
+	// internal
+	"github.com/Shevchenkko/payment_system/internal/service"
 )
 
 // Emails - represents api which is used for emails.

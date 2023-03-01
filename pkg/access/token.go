@@ -1,4 +1,3 @@
-// Package access implements server access.
 package access
 
 import (

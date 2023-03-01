@@ -1,4 +1,3 @@
-// Package controller implements application http delivery.
 package controller
 
 import (
@@ -15,7 +14,7 @@ import (
 )
 
 // NewRouter - represents application router.
-func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface) {
+func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface, r service.Repositories) {
 	// options
 	handler.Use(gin.Logger(), gin.Recovery(), corsMiddleware)
 
@@ -25,6 +24,9 @@ func NewRouter(handler *gin.Engine, s service.Services, l logger.Interface) {
 	// routers
 	h := handler.Group("/api/v1")
 	{
-		newUserRoutes(h, s.Users, l)
+		newUserRoutes(h, s, l, r)
+		newBankAccountRoutes(h, s, l, r)
+		newPaymentRoutes(h, s, l, r)
+		newAdminRoutes(h, s, l, r)
 	}
 }

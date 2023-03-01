@@ -1,4 +1,3 @@
-// Package app represents application.
 package app
 
 import (
@@ -11,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	// external
-
 	"github.com/Shevchenkko/payment_system/pkg/httpserver"
 	"github.com/Shevchenkko/payment_system/pkg/logger"
 	"github.com/Shevchenkko/payment_system/pkg/mysql"
@@ -43,6 +41,9 @@ func Run() {
 
 	err = sql.DB.AutoMigrate(
 		&domain.User{},
+		&domain.BankAccount{},
+		&domain.MessageLog{},
+		&domain.Payment{},
 	)
 
 	if err != nil {
@@ -56,7 +57,10 @@ func Run() {
 
 	// init repositories
 	repositories := service.Repositories{
-		Users: repository.NewUsersRepo(sql),
+		Users:    repository.NewUsersRepo(sql),
+		Banks:    repository.NewBankAccountsRepo(sql),
+		Payments: repository.NewPaymentsRepo(sql),
+		Messages: repository.NewMessageLogsRepo(sql),
 	}
 
 	services := service.Services{
@@ -64,13 +68,22 @@ func Run() {
 			repositories,
 			apis,
 		),
+		BankAccounts: service.NewBankAccountService(
+			repositories,
+		),
+		Payments: service.NewPaymentService(
+			repositories,
+		),
+		MessageLogs: service.NewMessageLogsService(
+			repositories,
+		),
 	}
 
 	// init framework of choice
 	handler := gin.New()
 
 	// init router
-	controller.NewRouter(handler, services, l)
+	controller.NewRouter(handler, services, l, repositories)
 
 	// init and run http server
 	httpServer := httpserver.New(handler, httpserver.Port(os.Getenv("HTTP_PORT")), httpserver.ReadTimeout(60*time.Second), httpserver.WriteTimeout(60*time.Second))

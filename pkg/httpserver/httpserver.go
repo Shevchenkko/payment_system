@@ -1,4 +1,3 @@
-// Package httpserver implements HTTP server.
 package httpserver
 
 import (
